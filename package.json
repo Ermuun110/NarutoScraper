@@ -1,0 +1,27 @@
+{
+  "name": "naruto-sample-scraper",
+  "version": "1.0.0",
+  "description": "Monitors 4 Japanese flea market platforms for Naruto Narutimate Data Carddas SAMPLE cards and alerts via Telegram.",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "once": "RUN_ONCE=1 node src/index.js",
+    "once:sold": "INCLUDE_SOLD=1 RUN_ONCE=1 node src/index.js",
+    "reset": "rm -f seen.json && echo 'seen.json wiped — next run alerts everything'",
+    "deploy": "VPS=user@your-vps-ip; ssh $VPS 'cd ~/naruto && git pull && npm install && pm2 restart naruto'",
+    "check:mandarake": "curl -s -o /dev/null -w 'HTTP %{http_code}  redirect=%{redirect_url}\\n' 'https://order.mandarake.co.jp/order/listPage/list?keyword=test&lang=ja'",
+    "mandarake:login": "node src/mandarake-login.js",
+    "mandarake:login:vps": "xvfb-run -a node src/mandarake-login.js",
+    "test:telegram": "node src/test-telegram.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0",
+    "dotenv": "^16.4.5",
+    "jose": "^5.9.6",
+    "node-cron": "^3.0.3",
+    "playwright": "^1.48.0"
+  }
+}
