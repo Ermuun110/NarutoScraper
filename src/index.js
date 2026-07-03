@@ -1,9 +1,9 @@
 import cron from 'node-cron';
-import { KEYWORDS, CRON_SCHEDULE } from './config.js';
+import { KEYWORDS, CRON_SCHEDULE, HEARTBEAT } from './config.js';
 import { loadState, isSeen, markSeen, saveState } from './state.js';
 import { classify } from './filter.js';
 import { isNarutimateSample } from './vision.js';
-import { sendAlert } from './telegram.js';
+import { sendAlert, sendRaw } from './telegram.js';
 import { toBuyee } from './buyee.js';
 import { closeBrowser } from './browser.js';
 
@@ -107,7 +107,7 @@ async function runCycle() {
   } finally {
     // Free Chromium between cycles so idle RAM ~0 (cookies persist on disk, so
     // the next cycle just re-warms in ~2s). Big win on free/small VPS tiers.
-    await closeMandarake().catch(() => {});
+    await closeMandarake().catch(() => { });
     running = false;
   }
 }
@@ -128,6 +128,48 @@ async function main() {
   }
 
   cron.schedule(CRON_SCHEDULE, runCycle);
+
+  if (HEARTBEAT) {
+    // Rude-but-not-slur ribbing so you know the bot's still alive. First one
+    // fires 10 min after boot (so you can verify), then every 5 hours.
+    const HEARTBEAT_MSGS = [
+      'What are you brokies up to',
+      'People are making money while you two fucking losers are jacking off',
+      'Still grinding while you do nothing',
+      'Broke ass losers',
+      'Bot working. You two? Doubt it.',
+      'Another 5 hours, still smarter than you',
+      'What did you two fags do today? Probably nothing productive',
+      'How’s that bot coming along? Oh wait… it’s not.',
+      'You two still pretending to work or is this just another circlejerk session?',
+      'Real ones are building while you two sit there with your thumbs up your asses',
+      'Another day of zero progress. Proud of yourselves?',
+      'Keep coping while I actually ship shit',
+      'You two are allergic to productivity',
+      'Bot’s live. You two still in bed?',
+      'How many more days you gonna waste before you do something?',
+      'Grinding my ass off while you two master the art of doing fuck all',
+      'You two are the reason “working on it” became a meme',
+      'Broke, lazy, and delusional. The holy trinity.',
+      'Another 6 hours and still nothing to show. Legendary work ethic.',
+      'You two make watching paint dry look productive',
+      'Keep telling yourselves you’re “planning”. I’m actually executing.',
+      'You two are so unproductive it’s actually impressive',
+      'Bot working 24/7. You two working on your next excuse.',
+      'Another day, another nothing from the dynamic duo of doing fuck all',
+      'Keep jacking off to the idea of working. I’ll keep actually working.',
+      'You two are allergic to shipping anything',
+      'Progress report from you two: still nothing. Noted.'
+    ];
+    const beat = () =>
+      sendRaw(HEARTBEAT_MSGS[Math.floor(Math.random() * HEARTBEAT_MSGS.length)]);
+    const FIVE_HOURS = 5 * 60 * 60 * 1000;
+    setTimeout(() => {
+      beat();
+      setInterval(beat, FIVE_HOURS);
+    }, 10 * 60 * 1000);
+    console.log('Heartbeat ON — first in 10 min, then every 5h.');
+  }
 }
 
 // Clean up browsers on shutdown.
