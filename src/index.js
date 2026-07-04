@@ -139,7 +139,7 @@ async function main() {
       'Broke ass losers',
       'Bot working. You two? Doubt it.',
       'Another 5 hours, still smarter than you',
-      'What did you two clowns do today? Probably nothing productive',
+      'What did you two fuckers do today? Probably nothing productive',
       'You two still pretending to work or is this just another circlejerk session?',
       'Real ones are building while you two sit there with your thumbs up your asses',
       'Another day of zero progress. Proud of yourselves?',

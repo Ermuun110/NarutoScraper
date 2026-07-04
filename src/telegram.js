@@ -6,6 +6,14 @@ const API = `https://api.telegram.org/bot${TELEGRAM.token}/sendMessage`;
 const esc = (s = '') =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+export async function sendRaw(text) {
+  try {
+    await axios.post(API, { chat_id: TELEGRAM.chatId, text });
+  } catch (err) {
+    console.error('Telegram sendRaw failed:', err.response?.data?.description || err.message);
+  }
+}
+
 export async function sendAlert(listing) {
   const { platform, title, price, url, buyeeUrl } = listing;
   const priceStr = price != null ? `¥${Number(price).toLocaleString('ja-JP')}` : '—';

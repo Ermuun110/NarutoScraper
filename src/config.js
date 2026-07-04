@@ -3,12 +3,15 @@ import { fileURLToPath } from 'node:url';
 dotenv.config();
 
 // Keywords searched on every platform each cycle; results merged + de-duped.
-// SAMPLE cards are labelled inconsistently across sites (latin "SAMPLE",
-// サンプル, 非売品), so we sweep all three and let the filter/AI narrow down.
-// ナルト + カード + サンプル (site search is order-independent AND), plus a
-// latin "SAMPLE" variant. Latin case is irrelevant — site search and our
-// filter both treat SAMPLE/Sample/sample the same.
-const DEFAULT_KEYWORDS = ['ナルト カード サンプル', 'ナルト カード SAMPLE'];
+// Pattern from real listings: サンプルカード (compound, no space) appears in
+// most titles. Data Carddas series uses latin "sample" alongside the series
+// name. Four sweeps cover compound-word, split-word, and both series lines.
+const DEFAULT_KEYWORDS = [
+  'ナルト サンプルカード',
+  'ナルト データカードダス サンプル',
+  'ナルト データカードダス sample',
+  'ナルティメット サンプルカード',
+];
 
 export const KEYWORDS = (process.env.SEARCH_KEYWORDS || '')
   .split(',')
@@ -28,6 +31,8 @@ export const TELEGRAM = {
 
 export const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 
+export const HEARTBEAT = /^(1|true|yes)$/i.test(process.env.HEARTBEAT || '');
+
 // TEST flag: when set, sold-out listings are NOT filtered (alerts fire for sold
 // items too). Use to verify a platform's pipeline end-to-end, then unset.
 export const INCLUDE_SOLD = /^(1|true|yes)$/i.test(process.env.INCLUDE_SOLD || '');
@@ -37,7 +42,7 @@ export const INCLUDE_SOLD = /^(1|true|yes)$/i.test(process.env.INCLUDE_SOLD || '
 // the false positives.
 
 // Naruto / Narutimate franchise.
-export const NARUTO_TERMS = ['naruto', 'ナルト', 'ナルティメット', 'narutimate'];
+export const NARUTO_TERMS = ['naruto', 'ナルト', 'ナルティメット', 'narutimate', 'データカードダス'];
 
 // Card.
 export const CARD_TERMS = ['カード', 'card', 'カードダス', 'data carddas', 'トレカ'];

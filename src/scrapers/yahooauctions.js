@@ -1,6 +1,5 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { HTTP } from '../config.js';
+import { fetchRendered } from '../browser.js';
 import { isSold } from '../util.js';
 
 const PLATFORM = 'YahooAuctions';
@@ -22,8 +21,8 @@ export async function scrapeYahooAuctions(keyword) {
     'https://auctions.yahoo.co.jp/search/search' +
     `?p=${encodeURIComponent(keyword)}&exflg=1&b=1&n=50&s1=new&o1=d`;
 
-  const res = await axios.get(url, HTTP);
-  const $ = cheerio.load(res.data);
+  const { html } = await fetchRendered(url);
+  const $ = cheerio.load(html);
   const out = [];
 
   $('.Product, li.Product, .Products__list .Product').each((_, el) => {

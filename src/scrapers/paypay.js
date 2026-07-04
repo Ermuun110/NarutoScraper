@@ -1,6 +1,5 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { HTTP } from '../config.js';
+import { fetchRendered } from '../browser.js';
 import { isSold } from '../util.js';
 
 const PLATFORM = 'PayPayFleamarket';
@@ -21,8 +20,8 @@ export async function scrapePayPay(keyword) {
     'https://paypayfleamarket.yahoo.co.jp/search/' +
     `${encodeURIComponent(keyword)}?sort=-created&open=1`;
 
-  const res = await axios.get(url, HTTP);
-  const $ = cheerio.load(res.data);
+  const { html } = await fetchRendered(url);
+  const $ = cheerio.load(html);
   const out = [];
 
   // PayPay markup changes often; target any anchor that points at an item.
