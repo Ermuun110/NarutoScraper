@@ -98,8 +98,7 @@ async function runCycle() {
       if (sent) {
         markSeen(key);
         alerted++;
-        const link = buyeeUrl || item.url;
-        console.log(`  ALERT [${item.platform}] (${item.keyword}) ${item.title}\n    → ${link}`);
+        console.log(`  ALERT [${item.platform}] ${item.title}`);
       }
     }
 
