@@ -11,6 +11,7 @@ const DEFAULT_KEYWORDS = [
   'ナルト データカードダス サンプル',
   'ナルト データカードダス sample',
   'ナルティメット サンプルカード',
+  '任務完遂証明書',
 ];
 
 export const KEYWORDS = (process.env.SEARCH_KEYWORDS || '')
