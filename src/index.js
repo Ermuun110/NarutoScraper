@@ -28,9 +28,11 @@ async function runScraper(fn) {
   const settled = await Promise.allSettled(KEYWORDS.map((kw) => fn(kw)));
   const byId = new Map();
   let firstError = null;
-  for (const r of settled) {
+  for (let i = 0; i < settled.length; i++) {
+    const r = settled[i];
+    const kw = KEYWORDS[i];
     if (r.status === 'fulfilled') {
-      for (const item of r.value) if (item.id && !byId.has(item.id)) byId.set(item.id, item);
+      for (const item of r.value) if (item.id && !byId.has(item.id)) byId.set(item.id, { ...item, keyword: kw });
     } else if (!firstError) {
       firstError = r.reason;
     }

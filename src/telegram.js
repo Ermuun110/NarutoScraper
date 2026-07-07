@@ -15,7 +15,7 @@ export async function sendRaw(text) {
 }
 
 export async function sendAlert(listing) {
-  const { platform, title, price, url, buyeeUrl } = listing;
+  const { platform, title, price, url, buyeeUrl, keyword } = listing;
   const priceStr = price != null ? `¥${Number(price).toLocaleString('ja-JP')}` : '—';
 
   // Prefer the Buyee proxy link (one-click order for overseas buyers). Keep
@@ -25,8 +25,9 @@ export async function sendAlert(listing) {
     ? `🛒 Buyee: ${esc(buyeeUrl)}\n🔗 Original: ${esc(url)}`
     : `🔗 ${esc(url)}`;
 
+  const label = keyword ? esc(keyword) : 'New listing';
   const text =
-    `🔥 <b>New listing</b> [${esc(platform)}]\n\n` +
+    `🔥 <b>${label}</b> [${esc(platform)}]\n\n` +
     `${esc(title)}\n` +
     `💴 ${priceStr}\n` +
     links;
