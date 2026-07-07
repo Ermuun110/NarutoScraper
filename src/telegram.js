@@ -25,7 +25,15 @@ export async function sendAlert(listing) {
     ? `🛒 Buyee: ${esc(buyeeUrl)}\n🔗 Original: ${esc(url)}`
     : `🔗 ${esc(url)}`;
 
-  const label = keyword ? esc(keyword) : 'New listing';
+  const KEYWORD_EN = {
+    'ナルト サンプルカード': 'Naruto Sample Card',
+    'ナルト データカードダス サンプル': 'Naruto Data Carddas Sample',
+    'ナルト データカードダス sample': 'Naruto Data Carddas Sample',
+    'ナルティメット サンプルカード': 'Narutimate Sample Card',
+    '任務完遂証明書': 'Mission Completion Certificate',
+  };
+  const en = keyword && KEYWORD_EN[keyword] ? ` (${KEYWORD_EN[keyword]})` : '';
+  const label = keyword ? `${esc(keyword)}${en}` : 'New listing';
   const text =
     `🔥 <b>${label}</b> [${esc(platform)}]\n\n` +
     `${esc(title)}\n` +
