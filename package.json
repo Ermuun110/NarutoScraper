@@ -9,7 +9,7 @@
     "once": "RUN_ONCE=1 node src/index.js",
     "once:sold": "INCLUDE_SOLD=1 RUN_ONCE=1 node src/index.js",
     "reset": "rm -f seen.json && echo 'seen.json wiped — next run alerts everything'",
-    "deploy": "VPS=user@your-vps-ip; ssh $VPS 'cd ~/naruto && git pull && npm install && pm2 restart naruto'",
+    "deploy": "git push && gcloud compute ssh naruto --project=naruto-501315 --zone=asia-northeast1-a --command='cd ~/naruto && git pull && npm install && pm2 restart naruto'",
     "check:mandarake": "curl -s -o /dev/null -w 'HTTP %{http_code}  redirect=%{redirect_url}\\n' 'https://order.mandarake.co.jp/order/listPage/list?keyword=test&lang=ja'",
     "mandarake:login": "node src/mandarake-login.js",
     "mandarake:login:vps": "xvfb-run -a node src/mandarake-login.js",
