@@ -1,0 +1,1 @@
+From now on: edit code -> npm run deploy -> done. One command.

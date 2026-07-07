@@ -43,10 +43,10 @@ export const INCLUDE_SOLD = /^(1|true|yes)$/i.test(process.env.INCLUDE_SOLD || '
 // the false positives.
 
 // Naruto / Narutimate franchise.
-export const NARUTO_TERMS = ['naruto', 'ナルト', 'ナルティメット', 'narutimate', 'データカードダス'];
+export const NARUTO_TERMS = ['naruto', 'ナルト', 'ナルティメット', 'narutimate'];
 
-// Card.
-export const CARD_TERMS = ['カード', 'card', 'カードダス', 'data carddas', 'トレカ'];
+// Card (and special Naruto cards like 任務完遂証明書).
+export const CARD_TERMS = ['カード', 'card', 'カードダス', 'data carddas', 'トレカ', '任務完遂証明書', 'データカードダス'];
 
 // Sample — strictly sample wording, nothing else.
 export const SAMPLE_TERMS = ['sample', 'サンプル', '見本'];
