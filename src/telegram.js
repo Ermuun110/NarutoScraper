@@ -26,7 +26,7 @@ export async function sendAlert(listing) {
     : `🔗 ${esc(url)}`;
 
   const text =
-    `🔥 <b>New SAMPLE card</b> [${esc(platform)}]\n\n` +
+    `🔥 <b>New listing</b> [${esc(platform)}]\n\n` +
     `${esc(title)}\n` +
     `💴 ${priceStr}\n` +
     links;
