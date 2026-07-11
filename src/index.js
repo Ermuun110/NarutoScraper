@@ -99,6 +99,11 @@ async function runCycle() {
         markSeen(key);
         alerted++;
         console.log(`  ALERT [${item.platform}] ${item.title}`);
+        // Stay under Telegram's ~20 msg/min per-chat limit. Without this a
+        // burst of new matches 429s, sends fail, listings never get marked
+        // seen, and every cycle re-floods the same wall — starving genuinely
+        // new listings. 3.2s/msg ~= 18/min.
+        await new Promise((r) => setTimeout(r, 3200));
       }
     }
 

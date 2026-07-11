@@ -6,12 +6,32 @@ const API = `https://api.telegram.org/bot${TELEGRAM.token}/sendMessage`;
 const esc = (s = '') =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-export async function sendRaw(text) {
-  try {
-    await axios.post(API, { chat_id: TELEGRAM.chatId, text });
-  } catch (err) {
-    console.error('Telegram sendRaw failed:', err.response?.data?.description || err.message);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// POST to Telegram, honoring 429 `retry_after`. One retry after the wait so a
+// burst of alerts survives the ~20 msg/min per-chat limit instead of silently
+// dropping (which previously left listings un-marked and re-flooding forever).
+async function post(payload, tries = 2) {
+  for (let i = 0; i < tries; i++) {
+    try {
+      await axios.post(API, payload);
+      return true;
+    } catch (err) {
+      const data = err.response?.data;
+      const retry = data?.parameters?.retry_after;
+      if (retry && i < tries - 1) {
+        await sleep((retry + 1) * 1000);
+        continue;
+      }
+      console.error('Telegram send failed:', data?.description || err.message);
+      return false;
+    }
   }
+  return false;
+}
+
+export async function sendRaw(text) {
+  await post({ chat_id: TELEGRAM.chatId, text });
 }
 
 export async function sendAlert(listing) {
@@ -40,16 +60,10 @@ export async function sendAlert(listing) {
     `💴 ${priceStr}\n` +
     links;
 
-  try {
-    await axios.post(API, {
-      chat_id: TELEGRAM.chatId,
-      text,
-      parse_mode: 'HTML',
-      disable_web_page_preview: false,
-    });
-    return true;
-  } catch (err) {
-    console.error('Telegram send failed:', err.response?.data?.description || err.message);
-    return false;
-  }
+  return post({
+    chat_id: TELEGRAM.chatId,
+    text,
+    parse_mode: 'HTML',
+    disable_web_page_preview: false,
+  });
 }
