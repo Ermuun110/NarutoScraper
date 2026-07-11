@@ -14,14 +14,40 @@ const DEFAULT_KEYWORDS = [
   '任務完遂証明書',
 ];
 
-export const KEYWORDS = (process.env.SEARCH_KEYWORDS || '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
+const parseKeywords = (raw) =>
+  (raw || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+export const KEYWORDS = parseKeywords(process.env.SEARCH_KEYWORDS);
 if (KEYWORDS.length === 0) KEYWORDS.push(...DEFAULT_KEYWORDS);
 
 // Back-compat single keyword (first of the list).
 export const KEYWORD = KEYWORDS[0];
+
+// Alert channels. Each = { name, chatId, keywords, filter }.
+//   filter 'naruto-sample' -> strict classify() (Naruto + Card + Sample).
+//   filter 'all'           -> alert on every result the scraper returns.
+// The primary channel is the original Naruto-sample setup. A second channel
+// activates only when both TELEGRAM_CHAT_ID_2 and SEARCH_KEYWORDS_2 are set.
+export const CHANNELS = [
+  {
+    name: 'main',
+    chatId: process.env.TELEGRAM_CHAT_ID,
+    keywords: KEYWORDS,
+    filter: 'naruto-sample',
+  },
+];
+
+if (process.env.TELEGRAM_CHAT_ID_2 && process.env.SEARCH_KEYWORDS_2) {
+  CHANNELS.push({
+    name: 'ch2',
+    chatId: process.env.TELEGRAM_CHAT_ID_2,
+    keywords: parseKeywords(process.env.SEARCH_KEYWORDS_2),
+    filter: 'all',
+  });
+}
 
 export const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '*/5 * * * *';
 

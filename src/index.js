@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { KEYWORDS, CRON_SCHEDULE, HEARTBEAT } from './config.js';
+import { CHANNELS, CRON_SCHEDULE, HEARTBEAT } from './config.js';
 import { loadState, isSeen, markSeen, saveState } from './state.js';
 import { classify } from './filter.js';
 import { isNarutimateSample } from './vision.js';
@@ -23,14 +23,14 @@ const SCRAPERS = [
 
 let running = false;
 
-// Run one scraper across all keywords, merging + de-duping its own results.
-async function runScraper(fn) {
-  const settled = await Promise.allSettled(KEYWORDS.map((kw) => fn(kw)));
+// Run one scraper across a keyword set, merging + de-duping its own results.
+async function runScraper(fn, keywords) {
+  const settled = await Promise.allSettled(keywords.map((kw) => fn(kw)));
   const byId = new Map();
   let firstError = null;
   for (let i = 0; i < settled.length; i++) {
     const r = settled[i];
-    const kw = KEYWORDS[i];
+    const kw = keywords[i];
     if (r.status === 'fulfilled') {
       for (const item of r.value) if (item.id && !byId.has(item.id)) byId.set(item.id, { ...item, keyword: kw });
     } else if (!firstError) {
@@ -42,9 +42,9 @@ async function runScraper(fn) {
   return [...byId.values()];
 }
 
-async function collect() {
+async function collect(keywords) {
   const settled = await Promise.allSettled(
-    SCRAPERS.map(([name, fn]) => runScraper(fn).then((items) => ({ name, items }))),
+    SCRAPERS.map(([name, fn]) => runScraper(fn, keywords).then((items) => ({ name, items }))),
   );
 
   const all = [];
@@ -68,47 +68,58 @@ async function runCycle() {
   }
   running = true;
   const started = new Date().toISOString();
-  console.log(`\n[${started}] Scanning for [${KEYWORDS.join(' | ')}]...`);
 
   try {
-    const listings = await collect();
-    let alerted = 0;
+    let totalScanned = 0;
+    let totalAlerted = 0;
 
-    for (const item of listings) {
-      const key = `${item.platform}:${item.id}`;
-      if (!item.id || isSeen(key)) continue;
+    // Each channel has its own keyword set, filter, and destination chat. A
+    // listing is tracked per-channel (key prefixed with channel name) so the
+    // same item can legitimately alert to two chats.
+    for (const channel of CHANNELS) {
+      console.log(`\n[${started}] [${channel.name}] Scanning for [${channel.keywords.join(' | ')}]...`);
+      const listings = await collect(channel.keywords);
+      totalScanned += listings.length;
 
-      // Collapse the newline/space runs that HTML scrapers pick up.
-      item.title = (item.title || '').replace(/\s+/g, ' ').trim();
+      for (const item of listings) {
+        const key = `${channel.name}:${item.platform}:${item.id}`;
+        if (!item.id || isSeen(key)) continue;
 
-      const verdict = classify(item.title);
-      if (verdict === 'reject') continue;
+        // Collapse the newline/space runs that HTML scrapers pick up.
+        item.title = (item.title || '').replace(/\s+/g, ' ').trim();
 
-      // Ambiguous keyword match -> confirm with AI vision check.
-      if (verdict === 'ambiguous') {
-        const ok = await isNarutimateSample(item);
-        if (!ok) {
-          markSeen(key); // remember rejection so we don't re-check every cycle
-          continue;
+        // 'all' channels alert on everything; 'naruto-sample' runs classify().
+        if (channel.filter !== 'all') {
+          const verdict = classify(item.title);
+          if (verdict === 'reject') continue;
+
+          // Ambiguous keyword match -> confirm with AI vision check.
+          if (verdict === 'ambiguous') {
+            const ok = await isNarutimateSample(item);
+            if (!ok) {
+              markSeen(key); // remember rejection so we don't re-check every cycle
+              continue;
+            }
+          }
         }
-      }
 
-      const { buyeeUrl } = toBuyee(item.platform, item.id, item.url);
-      const sent = await sendAlert({ ...item, buyeeUrl });
-      if (sent) {
-        markSeen(key);
-        alerted++;
-        console.log(`  ALERT [${item.platform}] ${item.title}`);
-        // Stay under Telegram's ~20 msg/min per-chat limit. Without this a
-        // burst of new matches 429s, sends fail, listings never get marked
-        // seen, and every cycle re-floods the same wall — starving genuinely
-        // new listings. 3.2s/msg ~= 18/min.
-        await new Promise((r) => setTimeout(r, 3200));
+        const { buyeeUrl } = toBuyee(item.platform, item.id, item.url);
+        const sent = await sendAlert({ ...item, buyeeUrl }, channel.chatId);
+        if (sent) {
+          markSeen(key);
+          totalAlerted++;
+          console.log(`  ALERT [${channel.name}][${item.platform}] ${item.title}`);
+          // Stay under Telegram's ~20 msg/min per-chat limit. Without this a
+          // burst of new matches 429s, sends fail, listings never get marked
+          // seen, and every cycle re-floods the same wall — starving genuinely
+          // new listings. 3.2s/msg ~= 18/min.
+          await new Promise((r) => setTimeout(r, 3200));
+        }
       }
     }
 
     await saveState();
-    console.log(`Cycle done. ${listings.length} scanned, ${alerted} new alert(s).`);
+    console.log(`Cycle done. ${totalScanned} scanned, ${totalAlerted} new alert(s).`);
   } catch (err) {
     console.error('Cycle error:', err);
   } finally {
@@ -122,7 +133,10 @@ async function runCycle() {
 async function main() {
   await loadState();
   console.log('Naruto SAMPLE scraper started.');
-  console.log(`Schedule: ${CRON_SCHEDULE} | Keywords: ${KEYWORDS.join(', ')}`);
+  console.log(`Schedule: ${CRON_SCHEDULE}`);
+  for (const c of CHANNELS) {
+    console.log(`  Channel [${c.name}] -> chat ${c.chatId} | filter ${c.filter} | keywords: ${c.keywords.join(', ')}`);
+  }
 
   // Run immediately on boot, then on schedule.
   await runCycle();

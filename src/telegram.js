@@ -34,7 +34,7 @@ export async function sendRaw(text) {
   await post({ chat_id: TELEGRAM.chatId, text });
 }
 
-export async function sendAlert(listing) {
+export async function sendAlert(listing, chatId = TELEGRAM.chatId) {
   const { platform, title, price, url, buyeeUrl, keyword } = listing;
   const priceStr = price != null ? `¥${Number(price).toLocaleString('ja-JP')}` : '—';
 
@@ -61,7 +61,7 @@ export async function sendAlert(listing) {
     links;
 
   return post({
-    chat_id: TELEGRAM.chatId,
+    chat_id: chatId,
     text,
     parse_mode: 'HTML',
     disable_web_page_preview: false,
