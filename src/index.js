@@ -8,14 +8,12 @@ import { toBuyee } from './buyee.js';
 import { closeBrowser } from './browser.js';
 
 import { scrapeMercari } from './scrapers/mercari.js';
-import { scrapeMandarake, closeMandarake } from './scrapers/mandarake.js';
 import { scrapeRakuma } from './scrapers/rakuma.js';
 import { scrapePayPay } from './scrapers/paypay.js';
 import { scrapeYahooAuctions } from './scrapers/yahooauctions.js';
 
 const SCRAPERS = [
   ['Mercari', scrapeMercari],
-  ['Mandarake', scrapeMandarake],
   ['Rakuma', scrapeRakuma],
   ['PayPay', scrapePayPay],
   ['YahooAuctions', scrapeYahooAuctions],
@@ -123,14 +121,6 @@ async function runCycle() {
   } catch (err) {
     console.error('Cycle error:', err);
   } finally {
-    // Free Chromium between cycles so idle RAM ~0 (cookies persist on disk, so
-    // the next cycle just re-warms in ~2s). Big win on free/small VPS tiers.
-    // 10s timeout: if Playwright's browser.close() hangs (zombie process), we
-    // must not block running=false — that would deadlock all future cycles.
-    await Promise.race([
-      closeMandarake().catch(() => {}),
-      new Promise((r) => setTimeout(r, 10000)),
-    ]);
     running = false;
   }
 }
@@ -201,7 +191,6 @@ async function main() {
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, async () => {
     await closeBrowser();
-    await closeMandarake();
     process.exit(0);
   });
 }
