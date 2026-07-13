@@ -125,7 +125,12 @@ async function runCycle() {
   } finally {
     // Free Chromium between cycles so idle RAM ~0 (cookies persist on disk, so
     // the next cycle just re-warms in ~2s). Big win on free/small VPS tiers.
-    await closeMandarake().catch(() => { });
+    // 10s timeout: if Playwright's browser.close() hangs (zombie process), we
+    // must not block running=false — that would deadlock all future cycles.
+    await Promise.race([
+      closeMandarake().catch(() => {}),
+      new Promise((r) => setTimeout(r, 10000)),
+    ]);
     running = false;
   }
 }
