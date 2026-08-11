@@ -139,7 +139,6 @@ async function main() {
   if (process.env.RUN_ONCE) {
     console.log('RUN_ONCE set — exiting.');
     await closeBrowser();
-    await closeMandarake();
     return;
   }
 

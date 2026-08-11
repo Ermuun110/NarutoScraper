@@ -1,4 +1,4 @@
-import { NARUTO_TERMS, CARD_TERMS, SAMPLE_TERMS } from './config.js';
+import { NARUTO_TERMS, SAMPLE_TERMS } from './config.js';
 
 const has = (text, terms) => terms.some((t) => text.includes(t.toLowerCase()));
 
@@ -11,8 +11,9 @@ const has = (text, terms) => terms.some((t) => text.includes(t.toLowerCase()));
  * and width variants match, then lowercased so SAMPLE/Sample/sample are equal.
  *
  * Rules:
- *   1. Standard: Naruto + Card + Sample (all three required)
- *   2. 任務完遂証明書 cert: Naruto + 任務完遂証明書 (no sample needed, it's inherently a cert card)
+ *   1. Sample: Naruto + Sample (card-word NOT required — many sample listings
+ *      omit カード/card in the title, which was silently dropping real hits)
+ *   2. 任務完遂証明書 cert: Naruto + 任務完遂証明書 (mission card)
  *   3. Exclude: Dragon Ball, One Piece (non-Naruto franchises)
  */
 export function classify(title) {
@@ -24,14 +25,13 @@ export function classify(title) {
   }
 
   const naruto = has(t, NARUTO_TERMS);
-  const card = has(t, CARD_TERMS);
   const sample = has(t, SAMPLE_TERMS);
   const isMissionCert = t.includes('任務完遂証明書');
 
-  // Standard rule: need all three
-  if (naruto && card && sample) return 'match';
+  // Sample rule: Naruto + Sample is enough.
+  if (naruto && sample) return 'match';
 
-  // Mission Completion Cert: just needs Naruto + the cert term
+  // Mission Completion Cert: Naruto + the cert term.
   if (naruto && isMissionCert) return 'match';
 
   return 'reject';

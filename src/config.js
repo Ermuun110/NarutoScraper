@@ -26,11 +26,8 @@ if (KEYWORDS.length === 0) KEYWORDS.push(...DEFAULT_KEYWORDS);
 // Back-compat single keyword (first of the list).
 export const KEYWORD = KEYWORDS[0];
 
-// Alert channels. Each = { name, chatId, keywords, filter }.
-//   filter 'naruto-sample' -> strict classify() (Naruto + Card + Sample).
-//   filter 'all'           -> alert on every result the scraper returns.
-// The primary channel is the original Naruto-sample setup. A second channel
-// activates only when both TELEGRAM_CHAT_ID_2 and SEARCH_KEYWORDS_2 are set.
+// Alert channel. filter 'naruto-sample' -> classify() (Naruto + Sample, or
+// Naruto + mission cert). Single channel — the sample + mission focus.
 export const CHANNELS = [
   {
     name: 'main',
@@ -39,15 +36,6 @@ export const CHANNELS = [
     filter: 'naruto-sample',
   },
 ];
-
-if (process.env.TELEGRAM_CHAT_ID_2 && process.env.SEARCH_KEYWORDS_2) {
-  CHANNELS.push({
-    name: 'ch2',
-    chatId: process.env.TELEGRAM_CHAT_ID_2,
-    keywords: parseKeywords(process.env.SEARCH_KEYWORDS_2),
-    filter: 'all',
-  });
-}
 
 export const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '*/5 * * * *';
 
