@@ -1,5 +1,6 @@
+import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { fetchRendered } from '../browser.js';
+import { HTTP } from '../config.js';
 import { isSold } from '../util.js';
 
 const PLATFORM = 'PayPayFleamarket';
@@ -20,8 +21,11 @@ export async function scrapePayPay(keyword) {
     'https://paypayfleamarket.yahoo.co.jp/search/' +
     `${encodeURIComponent(keyword)}?sort=-created&open=1`;
 
-  const { html } = await fetchRendered(url);
-  const $ = cheerio.load(html);
+  // Server-rendered enough that plain HTTP returns the item anchors. Dropped
+  // Playwright — Chromium couldn't launch on the 1GB VM (pthread_create EAGAIN),
+  // so this scraper silently died every cycle.
+  const res = await axios.get(url, HTTP);
+  const $ = cheerio.load(res.data);
   const out = [];
 
   // PayPay markup changes often; target any anchor that points at an item.
