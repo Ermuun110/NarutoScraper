@@ -8,6 +8,7 @@ dotenv.config();
 // name. Four sweeps cover compound-word, split-word, and both series lines.
 const DEFAULT_KEYWORDS = [
   'ナルト サンプルカード',
+  'ナルト サンプル',
   'ナルト データカードダス サンプル',
   'ナルト データカードダス sample',
   'ナルティメット サンプルカード',

@@ -20,7 +20,7 @@ export async function scrapeYahooAuctions(keyword) {
   // s1=new o1=d -> sort by newest first. Default search lists open auctions.
   const url =
     'https://auctions.yahoo.co.jp/search/search' +
-    `?p=${encodeURIComponent(keyword)}&exflg=1&b=1&n=50&s1=new&o1=d`;
+    `?p=${encodeURIComponent(keyword)}&exflg=1&b=1&n=50&s1=new&o1=d&f=0x4`; // f=0x4: also match descriptions
 
   // Yahoo Auctions search is server-rendered HTML — plain HTTP is enough.
   // Dropped Playwright: Chromium couldn't launch on the 1GB VM

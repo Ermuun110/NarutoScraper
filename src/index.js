@@ -1,11 +1,12 @@
 import cron from 'node-cron';
 import { CHANNELS, CRON_SCHEDULE, HEARTBEAT } from './config.js';
 import { loadState, isSeen, markSeen, saveState } from './state.js';
-import { classify } from './filter.js';
+import { classify, classifyDescription, hasNaruto } from './filter.js';
 import { isNarutimateSample } from './vision.js';
 import { sendAlert, sendRaw } from './telegram.js';
 import { toBuyee } from './buyee.js';
 import { closeBrowser } from './browser.js';
+import { canDescribe, fetchDescription } from './descriptions.js';
 
 import { scrapeMercari } from './scrapers/mercari.js';
 import { scrapeRakuma } from './scrapers/rakuma.js';
@@ -18,6 +19,12 @@ const SCRAPERS = [
   ['PayPay', scrapePayPay],
   ['YahooAuctions', scrapeYahooAuctions],
 ];
+
+// A title-only reject that still mentions Naruto gets a second look at
+// title + description (search matches descriptions too). Capped per platform
+// per cycle so a big backlog can't stall a cycle; the rest are picked up next
+// cycle. Results are remembered via markSeen, so each item is fetched once.
+const DESCRIPTION_CHECKS_PER_PLATFORM = 25;
 
 let running = false;
 
@@ -70,6 +77,7 @@ async function runCycle() {
   try {
     let totalScanned = 0;
     let totalAlerted = 0;
+    const descChecks = {};
 
     // Each channel has its own keyword set, filter, and destination chat. A
     // listing is tracked per-channel (key prefixed with channel name) so the
@@ -88,7 +96,24 @@ async function runCycle() {
 
         // 'all' channels alert on everything; 'naruto-sample' runs classify().
         if (channel.filter !== 'all') {
-          const verdict = classify(item.title);
+          let verdict = classify(item.title);
+
+          // Title alone missed it: the listing came from our keyword search, so
+          // "sample" may only be in the description. Check it once, then
+          // remember the result either way.
+          if (verdict === 'reject' && canDescribe(item.platform, item.id) && hasNaruto(item.title)) {
+            if ((descChecks[item.platform] || 0) >= DESCRIPTION_CHECKS_PER_PLATFORM) continue;
+            descChecks[item.platform] = (descChecks[item.platform] || 0) + 1;
+            const desc = await fetchDescription(item.platform, item.id);
+            await new Promise((r) => setTimeout(r, 300));
+            if (!desc) continue; // fetch failed -> retry next cycle
+            verdict = classifyDescription(item.title, desc);
+            if (verdict === 'reject') {
+              markSeen(key);
+              continue;
+            }
+            item.title += ' (sample in description)';
+          }
           if (verdict === 'reject') continue;
 
           // Ambiguous keyword match -> confirm with AI vision check.

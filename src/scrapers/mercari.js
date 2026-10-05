@@ -71,3 +71,28 @@ export async function scrapeMercari(keyword) {
     imageUrl: Array.isArray(it.thumbnails) ? it.thumbnails[0] : it.thumbnails,
   }));
 }
+
+const ITEM_API = 'https://api.mercari.jp/items/get';
+
+// Item description (the search API returns titles only). Search keywords match
+// descriptions too, so a listing can be a real hit with "sample" only in the
+// description — classify() must see that text. Returns '' on any failure.
+export async function fetchMercariDescription(id) {
+  try {
+    const dpop = await makeDpop(ITEM_API, 'GET');
+    const res = await axios.get(ITEM_API, {
+      ...HTTP,
+      params: { id },
+      headers: {
+        ...HTTP.headers,
+        DPoP: dpop,
+        'X-Platform': 'web',
+        Origin: 'https://jp.mercari.com',
+        Referer: 'https://jp.mercari.com/',
+      },
+    });
+    return res.data?.data?.description || '';
+  } catch {
+    return '';
+  }
+}

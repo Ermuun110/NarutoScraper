@@ -1,6 +1,10 @@
-import { NARUTO_TERMS, SAMPLE_TERMS } from './config.js';
+import { NARUTO_TERMS, SAMPLE_TERMS, CARD_TERMS } from './config.js';
 
 const has = (text, terms) => terms.some((t) => text.includes(t.toLowerCase()));
+
+export function hasNaruto(title) {
+  return has((title || '').normalize('NFKC').toLowerCase(), NARUTO_TERMS);
+}
 
 /**
  * Classify a listing title.
@@ -35,4 +39,17 @@ export function classify(title) {
   if (naruto && isMissionCert) return 'match';
 
   return 'reject';
+}
+
+/**
+ * Second-look check for listings whose TITLE didn't match: title + description
+ * together must contain all three — Japanese Naruto (ナルト/ナルティメット),
+ * Sample, and Card. Stricter than classify() because descriptions are long and
+ * noisy (a lone "sample" mention in a figure listing must not alert).
+ */
+export function classifyDescription(title, description) {
+  const t = `${title || ''} ${description || ''}`.normalize('NFKC').toLowerCase();
+  if (has(t, ['ドラゴンボール', 'dragon ball', 'ワンピース', 'one piece'])) return 'reject';
+  const naruto = t.includes('ナルト') || t.includes('ナルティメット');
+  return naruto && has(t, SAMPLE_TERMS) && has(t, CARD_TERMS) ? 'match' : 'reject';
 }
