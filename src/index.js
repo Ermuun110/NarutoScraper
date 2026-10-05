@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { CHANNELS, CRON_SCHEDULE, HEARTBEAT } from './config.js';
 import { loadState, isSeen, markSeen, saveState } from './state.js';
-import { classify, classifyDescription, hasNaruto } from './filter.js';
+import { classify, classifyDescription } from './filter.js';
 import { isNarutimateSample } from './vision.js';
 import { sendAlert, sendRaw } from './telegram.js';
 import { toBuyee } from './buyee.js';
@@ -20,8 +20,8 @@ const SCRAPERS = [
   ['YahooAuctions', scrapeYahooAuctions],
 ];
 
-// A title-only reject that still mentions Naruto gets a second look at
-// title + description (search matches descriptions too). Capped per platform
+// A 'maybe' title (Naruto + Card or Sample) gets a second look at title +
+// description (search matches descriptions too). Capped per platform
 // per cycle so a big backlog can't stall a cycle; the rest are picked up next
 // cycle. Results are remembered via markSeen, so each item is fetched once.
 const DESCRIPTION_CHECKS_PER_PLATFORM = 25;
@@ -98,10 +98,11 @@ async function runCycle() {
         if (channel.filter !== 'all') {
           let verdict = classify(item.title);
 
-          // Title alone missed it: the listing came from our keyword search, so
-          // "sample" may only be in the description. Check it once, then
+          // Title has Naruto + one of Card/Sample: the keyword search matched
+          // descriptions too, so the missing one may be there. Check once, then
           // remember the result either way.
-          if (verdict === 'reject' && canDescribe(item.platform, item.id) && hasNaruto(item.title)) {
+          if (verdict === 'maybe') {
+            if (!canDescribe(item.platform, item.id)) continue;
             if ((descChecks[item.platform] || 0) >= DESCRIPTION_CHECKS_PER_PLATFORM) continue;
             descChecks[item.platform] = (descChecks[item.platform] || 0) + 1;
             const desc = await fetchDescription(item.platform, item.id);
@@ -112,7 +113,7 @@ async function runCycle() {
               markSeen(key);
               continue;
             }
-            item.title += ' (sample in description)';
+            item.title += ' (matched via description)';
           }
           if (verdict === 'reject') continue;
 
