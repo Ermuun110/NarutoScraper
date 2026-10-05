@@ -43,14 +43,14 @@ const FETCHERS = {
 // Boilerplate that says "sample" but means "the photo is just an example"
 // (very common on Rakuma/PayPay) — not a sample card. Strip before matching.
 const PHOTO_BOILERPLATE = [
-  /(商品|画像|写真|イラスト|イメージ|カード)[^。\n]{0,8}サンプル(です|となります|になります)?/g,
+  /(商品|画像|写真|イラスト|イメージ)[^。\n]{0,15}サンプル(です|となります|になります)/g,
   /サンプル(画像|写真|イメージ|イラスト)/g,
   /サンプル盤/g, // "we don't sell promo/sample discs" CD-shop boilerplate
 ];
 
 // 見本 in a description almost always means "photo is just an example", so it
 // is dropped entirely (titles still match 見本 normally via classify()).
-const sanitize = (text) =>
+export const sanitize = (text) =>
   PHOTO_BOILERPLATE.reduce((t, re) => t.replace(re, ' '), text).replace(/見本/g, ' ');
 
 // Mercari Shops items (non-"m123..." ids) have no description endpoint.

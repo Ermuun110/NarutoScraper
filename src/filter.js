@@ -1,5 +1,12 @@
 import { NARUTO_TERMS, SAMPLE_TERMS, CARD_TERMS } from './config.js';
 
+// Non-Naruto franchises + ナルト/サンプル false friends (narutomaki fish cake
+// jewelry, 食品サンプル plastic food replicas, etc).
+const NON_CARD_TERMS = [
+  'ドラゴンボール', 'dragon ball', 'ワンピース', 'one piece',
+  '食品サンプル', 'ピアス', 'イヤリング', 'ネックレス', '寿司', 'ラーメン', 'なると巻', '鳴門巻',
+];
+
 const has = (text, terms) => terms.some((t) => text.includes(t.toLowerCase()));
 
 export function hasNaruto(title) {
@@ -24,9 +31,7 @@ export function classify(title) {
   const t = (title || '').normalize('NFKC').toLowerCase();
 
   // Exclude non-Naruto franchises
-  if (has(t, ['ドラゴンボール', 'dragon ball', 'ワンピース', 'one piece'])) {
-    return 'reject';
-  }
+  if (has(t, NON_CARD_TERMS)) return 'reject';
 
   const naruto = has(t, NARUTO_TERMS);
   const sample = has(t, SAMPLE_TERMS);
@@ -49,7 +54,7 @@ export function classify(title) {
  */
 export function classifyDescription(title, description) {
   const t = `${title || ''} ${description || ''}`.normalize('NFKC').toLowerCase();
-  if (has(t, ['ドラゴンボール', 'dragon ball', 'ワンピース', 'one piece'])) return 'reject';
+  if (has(t, NON_CARD_TERMS)) return 'reject';
   const naruto = t.includes('ナルト') || t.includes('ナルティメット');
   return naruto && has(t, SAMPLE_TERMS) && has(t, CARD_TERMS) ? 'match' : 'reject';
 }
